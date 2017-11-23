@@ -35,6 +35,20 @@ Certbot Git repository options. To install from source, set `certbot_install_fro
 
 The directory inside which Certbot will be cloned.
 
+### Automatic installation of self-signed certificates and certificates letsencrypt
+
+use variables "self" or "letsencrypt"
+
+    drupalvm_certificate: self
+
+To create subdomains certificates using a variable:
+
+    drupal_domain: example.com
+    certbot_email_address: postmaster@"{{ drupal_domain }}"
+    certbot_subdomains:
+    - www
+    - phpmyadmin
+
 ## Dependencies
 
 None.
