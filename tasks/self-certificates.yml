@@ -1,0 +1,79 @@
+---
+- name: Ensure Pip is installed.
+  package: name=python-pip state=present
+
+- name: Upgrade pip.
+  pip:
+    name: pip
+    state: present
+    extra_args: --upgrade
+
+- name: Ensure python OpenSSL dependencies are installed.
+  pip:
+    name: pyOpenSSL
+    state: present
+    extra_args: --upgrade
+
+- name: Remove directory for local self-signed TLS certs(Domain).
+  file:
+    path: /etc/letsencrypt/live/{{ drupal_domain }}
+    state: absent
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Ensure directory exists for local self-signed TLS certs(Domain).
+  file:
+    path: /etc/letsencrypt/live/{{ drupal_domain }}
+    state: directory
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Generate an OpenSSL private key(Domain).
+  openssl_privatekey:
+    path: /etc/letsencrypt/live/{{ drupal_domain }}/privkey.pem
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Generate an OpenSSL CSR(Domain).
+  openssl_csr:
+    path: /etc/ssl/private/{{ drupal_domain }}.csr
+    privatekey_path: /etc/letsencrypt/live/{{ drupal_domain }}/privkey.pem
+    force: True
+    common_name: "{{ drupal_domain }}"
+
+- name: Generate a Self Signed OpenSSL certificate(Domain).
+  openssl_certificate:
+    path: /etc/letsencrypt/live/{{ drupal_domain }}/fullchain.pem
+    privatekey_path: /etc/letsencrypt/live/{{ drupal_domain }}/privkey.pem
+    csr_path: /etc/ssl/private/{{ drupal_domain }}.csr
+    provider: selfsigned
+
+- name: Remove directory for local self-signed TLS certs(Subdomain).
+  file:
+    path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}
+    state: absent
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Ensure directory exists for local self-signed TLS certs(Subdomain).
+  file:
+    path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}
+    state: directory
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Generate an OpenSSL private key(Subdomain).
+  openssl_privatekey:
+    path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}/privkey.pem
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Generate an OpenSSL CSR(Subdomain).
+  openssl_csr:
+    path: /etc/ssl/private/{{ item }}.{{ drupal_domain }}.csr
+    privatekey_path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}/privkey.pem
+    force: True
+    common_name: "{{ item }}.{{ drupal_domain }}"
+  with_items: "{{ certbot_subdomains }}"
+
+- name: Generate a Self Signed OpenSSL certificate(Subdomain).
+  openssl_certificate:
+    path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}/fullchain.pem
+    privatekey_path: /etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}/privkey.pem
+    csr_path: /etc/ssl/private/{{ item }}.{{ drupal_domain }}.csr
+    provider: selfsigned
+  with_items: "{{ certbot_subdomains }}"

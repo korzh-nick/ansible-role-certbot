@@ -1,0 +1,20 @@
+---
+- name: Check if certificates already exists.
+  stat:
+    path: "/etc/letsencrypt/live/{{ drupal_domain }}/cert.pem"
+  register: certbot_certificate_domain
+
+- name: Generate Domain certificates (standalone).
+  command: "{{ certbot_script }} certonly --standalone --pre-hook 'service nginx stop' --post-hook 'service nginx start' --email {{ certbot_email_address }} -n --agree-tos --keep -d {{ drupal_domain }}"
+  when: not certbot_certificate_domain.stat.exists
+
+- name: Check if certificates already exists.
+  stat:
+    path: "/etc/letsencrypt/live/{{ item }}.{{ drupal_domain }}/cert.pem"
+  with_items: "{{ certbot_subdomains }}"
+  register: certbot_certificate_paths
+
+- name: Generate Subdomain certificates (standalone).
+  command: "{{ certbot_script }} certonly --standalone --pre-hook 'service nginx stop' --post-hook 'service nginx start' --email {{ certbot_email_address }} -n --agree-tos --keep -d {{ item.item }}.{{ drupal_domain }}"
+  when: not item.stat.exists
+  with_items: "{{ certbot_certificate_paths.results }}"

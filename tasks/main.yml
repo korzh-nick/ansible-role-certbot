@@ -7,5 +7,11 @@
 - include: install-from-source.yml
   when: certbot_install_from_source
 
+- include: self-certificates.yml
+  when: drupalvm_certificate == 'self'
+
+- include: letsencrypt-certificates.yml
+  when: drupalvm_certificate == 'letsencrypt'
+
 - include: renew-cron.yml
   when: certbot_auto_renew
